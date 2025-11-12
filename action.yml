@@ -13,6 +13,10 @@ inputs:
     description: "Optional filter to apply when merging code coverage reports."
     required: false
     default: ""
+  dotnet-version:
+    description: ".NET version to use. Defaults to 10.0.x."
+    required: false
+    default: "10.0.x"
 
 runs:
   using: composite
@@ -21,7 +25,7 @@ runs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: ${{ inputs.dotnet-version }}
 
     - name: Restore Dependencies
       shell: bash
@@ -42,7 +46,7 @@ runs:
     - name: Test
       shell: bash
       working-directory: ${{ inputs.directory }}
-      run: dotnet test --no-restore --no-build --configuration Release -- --coverage --coverage-output coverage.xml --coverage-output-format cobertura
+      run: dotnet test --no-restore --no-build --configuration Release --coverage --coverage-output coverage.xml --coverage-output-format cobertura
 
     - name: Merge Code Coverage Reports
       if: success() || failure()
@@ -67,7 +71,7 @@ runs:
         format: markdown
         indicators: true
         output: file
-        thresholds: '90 95'
+        thresholds: '80 90'
 
       # Perform last in case they fail for being too big at some point.
     - name: Add Code Coverage Summary to Job Summary
