@@ -46,7 +46,7 @@ runs:
     - name: Test
       shell: bash
       working-directory: ${{ inputs.directory }}
-      run: dotnet test --no-restore --no-build --configuration Release --coverage --coverage-output coverage.xml --coverage-output-format cobertura
+      run: dotnet test --no-restore --no-build --configuration Release --coverage --coverage-output-format cobertura
 
     - name: Merge Code Coverage Reports
       if: success() || failure()
@@ -55,7 +55,7 @@ runs:
       run: |
         dotnet new tool-manifest
         dotnet tool install dotnet-reportgenerator-globaltool
-        dotnet tool run reportgenerator "-reports:**/TestResults/**/coverage.xml" "-targetdir:." "-reportTypes:Cobertura"${{ inputs.coverage-assembly-filters != '' && format(' -assemblyfilters:{0}', inputs.coverage-assembly-filters) || '' }}
+        dotnet tool run reportgenerator "-reports:**/TestResults/**/*.cobertura.xml" "-targetdir:." "-reportTypes:Cobertura"${{ inputs.coverage-assembly-filters != '' && format(' -assemblyfilters:{0}', inputs.coverage-assembly-filters) || '' }}
         
     - name: Generate Code Coverage Summary
       uses: irongut/CodeCoverageSummary@v1.3.0
