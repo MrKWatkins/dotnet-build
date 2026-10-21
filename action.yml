@@ -9,6 +9,10 @@ inputs:
     description: "Name of the solution, used in the name for the coverage summary."
     required: false
     default: ""
+  test-filter:
+    description: "Optional dotnet test filter expression. Empty runs all tests."
+    required: false
+    default: ""
   coverage:
     description: "Collect coverage and generate coverage reports. Enabled by default."
     required: false
@@ -52,8 +56,12 @@ runs:
       working-directory: ${{ inputs.directory }}
       env:
         COLLECT_COVERAGE: ${{ inputs.coverage }}
+        TEST_FILTER: ${{ inputs.test-filter }}
       run: |
         arguments=(--no-restore --no-build --configuration Release)
+        if [[ -n "$TEST_FILTER" ]]; then
+          arguments+=(--filter "$TEST_FILTER")
+        fi
         if [[ "$COLLECT_COVERAGE" == "true" ]]; then
           arguments+=(--coverage --coverage-output-format cobertura)
         fi
