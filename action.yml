@@ -9,6 +9,10 @@ inputs:
     description: "Name of the solution, used in the name for the coverage summary."
     required: false
     default: ""
+  coverage:
+    description: "Collect coverage and generate coverage reports. Enabled by default."
+    required: false
+    default: "true"
   coverage-assembly-filters:
     description: "Optional filter to apply when merging code coverage reports."
     required: false
@@ -23,7 +27,7 @@ runs:
 
   steps:
     - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
@@ -46,10 +50,17 @@ runs:
     - name: Test
       shell: bash
       working-directory: ${{ inputs.directory }}
-      run: dotnet test --no-restore --no-build --configuration Release --coverage --coverage-output-format cobertura
+      env:
+        COLLECT_COVERAGE: ${{ inputs.coverage }}
+      run: |
+        arguments=(--no-restore --no-build --configuration Release)
+        if [[ "$COLLECT_COVERAGE" == "true" ]]; then
+          arguments+=(--coverage --coverage-output-format cobertura)
+        fi
+        dotnet test "${arguments[@]}"
 
     - name: Merge Code Coverage Reports
-      if: success() || failure()
+      if: ${{ (success() || failure()) && inputs.coverage == 'true' }}
       shell: bash
       working-directory: ${{ inputs.directory }}
       run: |
@@ -58,6 +69,7 @@ runs:
         dotnet tool run reportgenerator "-reports:**/TestResults/**/*.cobertura.xml" "-targetdir:." "-reportTypes:Cobertura"${{ inputs.coverage-assembly-filters != '' && format(' -assemblyfilters:{0}', inputs.coverage-assembly-filters) || '' }}
         
     - name: Generate Code Coverage Summary
+      if: ${{ inputs.coverage == 'true' }}
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
         filename: ${{ inputs.directory }}/Cobertura.xml
@@ -68,6 +80,7 @@ runs:
 
       # Perform last in case they fail for being too big at some point.
     - name: Add Code Coverage Summary to Job Summary
+      if: ${{ inputs.coverage == 'true' }}
       shell: bash
       run: |
         echo "# ${{ inputs.name }} Coverage Report" >> $GITHUB_STEP_SUMMARY
